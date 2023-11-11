@@ -19,4 +19,12 @@ class SingleConnectionDataSourceTest {
     void getConnection() {
         assertDoesNotThrow(SingleConnectionDataSource.getInstance()::getConnection);
     }
+
+    @Test
+    void generateSchema() {
+        assertDoesNotThrow(() -> {
+            SingleConnectionDataSource.getInstance().getConnection().createStatement()
+                    .executeQuery("SELECT * FROM customer, item, \"order\", order_item ");
+        });
+    }
 }
