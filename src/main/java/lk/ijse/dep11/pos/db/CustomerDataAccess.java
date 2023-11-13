@@ -54,8 +54,8 @@ public class CustomerDataAccess {
         STM_UPDATE.executeUpdate();
     }
 
-    public static void deleteCustomer(Customer customer) throws SQLException {
-        STM_DELETE.setString(1, customer.getId());
+    public static void deleteCustomer(String customerId) throws SQLException {
+        STM_DELETE.setString(1, customerId);
         STM_DELETE.executeUpdate();
     }
 
