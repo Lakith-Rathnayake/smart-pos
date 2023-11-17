@@ -16,6 +16,7 @@ import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.AnchorPane;
 import javafx.stage.Stage;
 import lk.ijse.dep11.pos.db.CustomerDataAccess;
+import lk.ijse.dep11.pos.db.OrderDataAccess;
 import lk.ijse.dep11.pos.tm.Customer;
 
 import java.io.IOException;
@@ -130,5 +131,18 @@ public class ManageCustomerFormController {
     }
 
     public void btnDelete_OnAction(ActionEvent actionEvent) {
+        try {
+            if(OrderDataAccess.existsOrderByCustomerId(txtCustomerId.getText())){
+                new Alert(Alert.AlertType.ERROR, "Unable to delete the customer, already associated with an Order");
+            } else {
+                CustomerDataAccess.deleteCustomer(txtCustomerId.getText());
+                ObservableList<Customer> customerList = tblCustomers.getItems();
+                Customer selectedCustomer = tblCustomers.getSelectionModel().getSelectedItem();
+                customerList.remove(selectedCustomer);
+                if(customerList.isEmpty()) btnAddNew.fire();
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
     }
 }

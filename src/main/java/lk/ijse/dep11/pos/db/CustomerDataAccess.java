@@ -15,11 +15,13 @@ public class CustomerDataAccess {
     static final PreparedStatement STM_INSERT;
     static final PreparedStatement STM_UPDATE;
     static final PreparedStatement STM_DELETE;
+    static final PreparedStatement STM_GET_LAST_ID;
 
     static {
         try {
             Connection connection = SingleConnectionDataSource.getInstance().getConnection();
-            STM_GET_ALL = connection.prepareStatement("SELECT * FROM customer");
+            STM_GET_LAST_ID = connection.prepareStatement("SELECT id FROM customer ORDER BY id DESC FETCH FIRST ROW ONLY ");
+            STM_GET_ALL = connection.prepareStatement("SELECT * FROM customer ORDER BY id");
             STM_INSERT = connection.prepareStatement("INSERT INTO customer (id, name, address) VALUES (?, ?, ?)");
             STM_UPDATE = connection.prepareStatement("UPDATE customer SET name=?, address=? WHERE id=?");
             STM_DELETE = connection.prepareStatement("DELETE FROM customer where id=?");
@@ -60,8 +62,12 @@ public class CustomerDataAccess {
     }
 
     public static String getLastCustomerID() throws SQLException {
-        List<Customer> customerList = getAllCustomers();
-        return customerList.isEmpty() ? null : customerList.get(customerList.size() - 1).getId();
+        ResultSet rst = STM_GET_LAST_ID.executeQuery();
+        if(rst.next()) {
+            return rst.getString(1);
+        } else {
+            return null;
+        }
     }
 
 }
