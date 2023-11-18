@@ -56,11 +56,11 @@ public class ItemDataAccess {
         STM_UPDATE.setInt(2, item.getQty());
         STM_UPDATE.setBigDecimal(3, item.getUnitPrice());
         STM_UPDATE.setString(4, item.getCode());
-        STM_UPDATE.executeQuery();
+        STM_UPDATE.executeUpdate();
     }
 
-    public static void deleteItem(Item item) throws SQLException {
-        STM_DELETE.setString(1, item.getCode());
+    public static void deleteItem(String code) throws SQLException {
+        STM_DELETE.setString(1, code);
         STM_DELETE.executeUpdate();
     }
 
