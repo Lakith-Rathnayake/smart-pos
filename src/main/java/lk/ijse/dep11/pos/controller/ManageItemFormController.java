@@ -3,20 +3,26 @@ package lk.ijse.dep11.pos.controller;
 import com.jfoenix.controls.JFXButton;
 import com.jfoenix.controls.JFXTextField;
 import javafx.application.Platform;
+import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
+import javafx.scene.control.Alert;
 import javafx.scene.control.TableView;
 import javafx.scene.control.TextField;
 import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.AnchorPane;
 import javafx.stage.Stage;
+import lk.ijse.dep11.pos.db.ItemDataAccess;
+import lk.ijse.dep11.pos.db.OrderDataAccess;
 import lk.ijse.dep11.pos.tm.Item;
 
 import java.io.IOException;
+import java.math.BigDecimal;
 import java.net.URL;
+import java.sql.SQLException;
 
 public class ManageItemFormController {
     public AnchorPane root;
@@ -27,6 +33,7 @@ public class ManageItemFormController {
     public JFXButton btnDelete;
     public TableView<Item> tblItems;
     public JFXTextField txtUnitPrice;
+    public JFXButton btnAddNew;
 
     public void initialize() {
         tblItems.getColumns().get(0).setCellValueFactory(new PropertyValueFactory<>("code"));
@@ -35,7 +42,28 @@ public class ManageItemFormController {
         tblItems.getColumns().get(3).setCellValueFactory(new PropertyValueFactory<>("unitPrice"));
         btnDelete.setDisable(true);
         btnSave.setDefaultButton(true);
+        try {
+            tblItems.getItems().addAll(ItemDataAccess.getAllItems());
+        } catch (SQLException e) {
+            new Alert(Alert.AlertType.ERROR, "Failed to load items, try again!").show();
+            e.printStackTrace();
+        }
         Platform.runLater(txtCode::requestFocus);
+        tblItems.getSelectionModel().selectedItemProperty().addListener((ov, prev, cur)-> {
+            if(cur == null) {
+                btnSave.setText("SAVE");
+                btnDelete.setDisable(true);
+                txtCode.setDisable(false);
+            } else {
+                btnSave.setText("UPDATE");
+                btnDelete.setDisable(false);
+                txtCode.setText(cur.getCode());
+                txtCode.setDisable(true);
+                txtDescription.setText(cur.getDescription());
+                txtQtyOnHand.setText(cur.getQty()  + "");
+                txtUnitPrice.setText(cur.getUnitPrice() + "");
+            }
+        });
     }
 
     public void navigateToHome(MouseEvent mouseEvent) throws IOException {
@@ -50,6 +78,30 @@ public class ManageItemFormController {
 
     public void btnSave_OnAction(ActionEvent actionEvent) {
         if(!isValid()) return;
+
+        try {
+            Item item = new Item(txtCode.getText().strip(), txtDescription.getText().strip(),
+                    Integer.parseInt(txtQtyOnHand.getText().strip()), new BigDecimal(txtUnitPrice.getText().strip()));
+            if (btnSave.getText().equals("SAVE")) {
+                if (ItemDataAccess.existsItem(item.getCode())) {
+                    new Alert(Alert.AlertType.ERROR, "Item code is already exits").show();
+                    txtCode.selectAll();
+                    txtCode.requestFocus();
+                    return;
+                }
+                ItemDataAccess.saveItem(item);
+                tblItems.getItems().add(item);
+            } else {
+                ItemDataAccess.updateItem(item);
+                ObservableList<Item> itemList = tblItems.getItems();
+                Item selectedItem = tblItems.getSelectionModel().getSelectedItem();
+                itemList.set(itemList.indexOf(selectedItem), item);
+                tblItems.refresh();
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+            new Alert(Alert.AlertType.ERROR, "Failed to save the item, try again").show();
+        }
     }
 
     private boolean isValid() {
@@ -90,5 +142,18 @@ public class ManageItemFormController {
     }
 
     public void btnDelete_OnAction(ActionEvent actionEvent) {
+        Item selectedItem = tblItems.getSelectionModel().getSelectedItem();
+        try {
+            if (OrderDataAccess.existsOrderByItemCode(selectedItem.getCode())){
+                new Alert(Alert.AlertType.ERROR, "Failed to delete, item already associated with an order").show();
+            }else{
+                ItemDataAccess.deleteItem(selectedItem.getCode());
+                tblItems.getItems().remove(selectedItem);
+                if (tblItems.getItems().isEmpty()) btnAddNew.fire();
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+            new Alert(Alert.AlertType.ERROR, "Failed to delete, try again").show();
+        }
     }
 }
