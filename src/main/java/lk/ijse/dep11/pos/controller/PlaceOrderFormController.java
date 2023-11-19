@@ -16,6 +16,7 @@ import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.AnchorPane;
 import javafx.stage.Stage;
 import lk.ijse.dep11.pos.db.CustomerDataAccess;
+import lk.ijse.dep11.pos.db.ItemDataAccess;
 import lk.ijse.dep11.pos.tm.Customer;
 import lk.ijse.dep11.pos.tm.Item;
 
@@ -44,7 +45,7 @@ public class PlaceOrderFormController {
     public void initialize() throws IOException {
         lblDate.setText(LocalDate.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd")));
         newOrder();
-        try {
+
             cmbCustomerId.getItems().addAll(CustomerDataAccess.getAllCustomers());
             cmbCustomerId.getSelectionModel().selectedItemProperty().addListener((ov, prev,cur)->{
                 if (cur != null){
@@ -56,14 +57,27 @@ public class PlaceOrderFormController {
                     txtCustomerName.setDisable(true);
                 }
             });
-        } catch (SQLException e) {
-            new Alert(Alert.AlertType.ERROR, "Failed to establish database connection, try later").show();
-            e.printStackTrace();
-            navigateToHome(null);
-        }
+            cmbItemCode.getSelectionModel().selectedItemProperty().addListener((ov, prev, cur) ->{
+                if (cur != null){
+                    txtDescription.setText(cur.getDescription());
+                    txtQtyOnHand.setText(cur.getQty() + "");
+                    txtUnitPrice.setText(cur.getUnitPrice().toString());
+
+                    for (TextField txt : new TextField[]{txtDescription, txtQtyOnHand, txtUnitPrice}) {
+                        txt.setDisable(false);
+                        txt.setEditable(false);
+                    }
+                    txtQty.setDisable(cur.getQty() == 0);
+                }else{
+                    for (TextField txt : new TextField[]{txtDescription, txtQtyOnHand, txtUnitPrice, txtQty}) {
+                        txt.setDisable(true);
+                        txt.clear();
+                    }
+                }
+            });
     }
 
-    private void newOrder() {
+    private void newOrder() throws IOException {
         for (TextField txt : new TextField[]{txtCustomerName, txtDescription, txtQty, txtQtyOnHand, txtUnitPrice}) {
             txt.clear();
             txt.setDisable(true);
@@ -74,6 +88,16 @@ public class PlaceOrderFormController {
         btnPlaceOrder.setDisable(true);
         cmbCustomerId.getSelectionModel().clearSelection();
         cmbItemCode.getSelectionModel().clearSelection();
+        try {
+            cmbCustomerId.getItems().clear();
+            cmbCustomerId.getItems().addAll(CustomerDataAccess.getAllCustomers());
+            cmbItemCode.getItems().clear();
+            cmbItemCode.getItems().addAll(ItemDataAccess.getAllItems());
+        } catch (SQLException e) {
+            new Alert(Alert.AlertType.ERROR, "Failed to establish database connection, try later").show();
+            e.printStackTrace();
+            navigateToHome(null);
+        }
         Platform.runLater(cmbCustomerId::requestFocus);
     }
 
