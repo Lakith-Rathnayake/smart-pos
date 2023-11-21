@@ -12,6 +12,7 @@ import javafx.scene.control.Alert;
 import javafx.scene.control.Label;
 import javafx.scene.control.TableView;
 import javafx.scene.control.TextField;
+import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.AnchorPane;
 import javafx.stage.Stage;
@@ -19,12 +20,14 @@ import lk.ijse.dep11.pos.db.CustomerDataAccess;
 import lk.ijse.dep11.pos.db.ItemDataAccess;
 import lk.ijse.dep11.pos.tm.Customer;
 import lk.ijse.dep11.pos.tm.Item;
+import lk.ijse.dep11.pos.tm.OrderItem;
 
 import java.io.IOException;
 import java.net.URL;
 import java.sql.SQLException;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
+import java.util.Optional;
 
 public class PlaceOrderFormController {
     public AnchorPane root;
@@ -32,7 +35,7 @@ public class PlaceOrderFormController {
     public JFXTextField txtDescription;
     public JFXTextField txtQtyOnHand;
     public JFXButton btnSave;
-    public TableView tblOrderDetails;
+    public TableView<OrderItem> tblOrderDetails;
     public JFXTextField txtUnitPrice;
     public JFXComboBox<Customer> cmbCustomerId;
     public JFXComboBox<Item> cmbItemCode;
@@ -43,6 +46,10 @@ public class PlaceOrderFormController {
     public JFXButton btnPlaceOrder;
 
     public void initialize() throws IOException {
+        String[] cols = {"code", "description", "qty", "unitPrice", "btnDelete"};
+        for (int i = 0; i < cols.length; i++) {
+            tblOrderDetails.getColumns().get(i).setCellValueFactory(new PropertyValueFactory<>(cols[i]));
+        }
         lblDate.setText(LocalDate.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd")));
         newOrder();
         cmbCustomerId.getSelectionModel().selectedItemProperty().addListener((ov, prev, cur) -> {
@@ -115,6 +122,24 @@ public class PlaceOrderFormController {
     }
 
     public void btnAdd_OnAction(ActionEvent actionEvent) {
+        Item selectedItem = cmbItemCode.getSelectionModel().getSelectedItem();
+        Optional<OrderItem> optOrderItem = tblOrderDetails.getItems().stream()
+                .filter(item -> selectedItem.getCode().equals(item.getCode())).findFirst();
+
+        if (optOrderItem.isEmpty()) {
+            OrderItem newOrderItem = new OrderItem(selectedItem.getCode(), selectedItem.getDescription(),
+                    Integer.parseInt(txtQty.getText()), selectedItem.getUnitPrice(),
+                    new JFXButton("Delete"));
+            tblOrderDetails.getItems().add(newOrderItem);
+            selectedItem.setQty(selectedItem.getQty() - newOrderItem.getQty());
+        }else{
+            OrderItem orderItem = optOrderItem.get();
+            orderItem.setQty(orderItem.getQty() +  Integer.parseInt(txtQty.getText()));
+            tblOrderDetails.refresh();
+            selectedItem.setQty(selectedItem.getQty() - Integer.parseInt(txtQty.getText()));
+        }
+        cmbItemCode.getSelectionModel().clearSelection();
+        cmbItemCode.requestFocus();
     }
 
     public void txtQty_OnAction(ActionEvent actionEvent) {
