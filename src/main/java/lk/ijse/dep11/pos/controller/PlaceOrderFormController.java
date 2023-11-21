@@ -45,36 +45,45 @@ public class PlaceOrderFormController {
     public void initialize() throws IOException {
         lblDate.setText(LocalDate.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd")));
         newOrder();
+        cmbCustomerId.getSelectionModel().selectedItemProperty().addListener((ov, prev, cur) -> {
+            if (cur != null) {
+                txtCustomerName.setText(cur.getName());
+                txtCustomerName.setDisable(false);
+                txtCustomerName.setEditable(false);
+            } else {
+                txtCustomerName.clear();
+                txtCustomerName.setDisable(true);
+            }
+        });
+        cmbItemCode.getSelectionModel().selectedItemProperty().addListener((ov, prev, cur) -> {
+            if (cur != null) {
+                txtDescription.setText(cur.getDescription());
+                txtQtyOnHand.setText(cur.getQty() + "");
+                txtUnitPrice.setText(cur.getUnitPrice().toString());
 
-            cmbCustomerId.getItems().addAll(CustomerDataAccess.getAllCustomers());
-            cmbCustomerId.getSelectionModel().selectedItemProperty().addListener((ov, prev,cur)->{
-                if (cur != null){
-                    txtCustomerName.setText(cur.getName());
-                    txtCustomerName.setDisable(false);
-                    txtCustomerName.setEditable(false);
-                }else{
-                    txtCustomerName.clear();
-                    txtCustomerName.setDisable(true);
+                for (TextField txt : new TextField[]{txtDescription, txtQtyOnHand, txtUnitPrice}) {
+                    txt.setDisable(false);
+                    txt.setEditable(false);
                 }
-            });
-            cmbItemCode.getSelectionModel().selectedItemProperty().addListener((ov, prev, cur) ->{
-                if (cur != null){
-                    txtDescription.setText(cur.getDescription());
-                    txtQtyOnHand.setText(cur.getQty() + "");
-                    txtUnitPrice.setText(cur.getUnitPrice().toString());
-
-                    for (TextField txt : new TextField[]{txtDescription, txtQtyOnHand, txtUnitPrice}) {
-                        txt.setDisable(false);
-                        txt.setEditable(false);
-                    }
-                    txtQty.setDisable(cur.getQty() == 0);
-                }else{
-                    for (TextField txt : new TextField[]{txtDescription, txtQtyOnHand, txtUnitPrice, txtQty}) {
-                        txt.setDisable(true);
-                        txt.clear();
-                    }
+                txtQty.setDisable(cur.getQty() == 0);
+            } else {
+                for (TextField txt : new TextField[]{txtDescription, txtQtyOnHand, txtUnitPrice, txtQty}) {
+                    txt.setDisable(true);
+                    txt.clear();
                 }
-            });
+            }
+        });
+        txtQty.textProperty().addListener((ov, prevQty, curQty) -> {
+            Item selectedItem = cmbItemCode.getSelectionModel().getSelectedItem();
+//            btnSave.setDisable(true);
+//            if (cur.matches("\\d+")){
+//                if (Integer.parseInt(cur) <= selectedItem.getQty() && Integer.parseInt(cur) > 0){
+//                    btnSave.setDisable(false);
+//                }
+//            }
+            btnSave.setDisable(!(curQty.matches("\\d+") && Integer.parseInt(curQty) <= selectedItem.getQty()
+                    && Integer.parseInt(curQty) > 0));
+        });
     }
 
     private void newOrder() throws IOException {
