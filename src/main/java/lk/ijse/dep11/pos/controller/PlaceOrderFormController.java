@@ -128,10 +128,16 @@ public class PlaceOrderFormController {
                 .filter(item -> selectedItem.getCode().equals(item.getCode())).findFirst();
 
         if (optOrderItem.isEmpty()) {
+            JFXButton btnDelete = new JFXButton("Delete");
             OrderItem newOrderItem = new OrderItem(selectedItem.getCode(), selectedItem.getDescription(),
                     Integer.parseInt(txtQty.getText()), selectedItem.getUnitPrice(),
-                    new JFXButton("Delete"));
+                    btnDelete);
             tblOrderDetails.getItems().add(newOrderItem);
+            btnDelete.setOnAction(e -> {
+                tblOrderDetails.getItems().remove(newOrderItem);
+                selectedItem.setQty(selectedItem.getQty() + newOrderItem.getQty());
+                calculateOrderTotal();
+            });
             selectedItem.setQty(selectedItem.getQty() - newOrderItem.getQty());
         }else{
             OrderItem orderItem = optOrderItem.get();
@@ -146,8 +152,8 @@ public class PlaceOrderFormController {
 
     private void calculateOrderTotal(){
         Optional<BigDecimal> orderTotal = tblOrderDetails.getItems().stream()
-                .map(OrderItem::getTotal)
-                .reduce(BigDecimal::add);
+                .map(oi -> oi.getTotal())
+                .reduce((prev, cur) -> prev.add(cur));
         lblTotal.setText("Total: Rs. " + orderTotal.get().setScale(2));
 
     }
