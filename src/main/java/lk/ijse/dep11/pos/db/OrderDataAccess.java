@@ -1,8 +1,11 @@
 package lk.ijse.dep11.pos.db;
 
+import lk.ijse.dep11.pos.tm.Order;
 import lk.ijse.dep11.pos.tm.OrderItem;
 
+import java.math.BigDecimal;
 import java.sql.*;
+import java.util.ArrayList;
 import java.util.List;
 
 public class OrderDataAccess {
@@ -13,6 +16,7 @@ public class OrderDataAccess {
     private static final PreparedStatement STM_INSERT_ORDER;
     private static final PreparedStatement STM_INSERT_ORDER_ITEM;
     private static final PreparedStatement STM_UPDATE_STOCK;
+    private static final PreparedStatement STM_FIND;
 
     static {
         try {
@@ -27,9 +31,33 @@ public class OrderDataAccess {
                     ("INSERT INTO order_item (order_id, item_code, qty, unit_price) VALUES (?,?,?,?)");
             STM_UPDATE_STOCK = connection.prepareStatement
                     ("UPDATE item SET qty = qty - ? WHERE code = ?");
+            STM_FIND = connection.prepareStatement("SELECT o.*, c.name, CAST(order_total.total AS DECIMAL(8,2))  FROM \"order\" AS o INNER JOIN customer AS c ON o.customer_id = c.id\n" +
+                    "    INNER JOIN\n" +
+                    "\n" +
+                    "(SELECT o.id, SUM(oi.qty * oi.unit_price) total FROM \"order\" o\n" +
+                    "    INNER JOIN order_item oi ON o.id = oi.order_id\n" +
+                    "    GROUP BY o.id) AS order_total ON o.id = order_total.id WHERE o.id LIKE ? OR CAST(o.date AS VARCHAR(20)) LIKE ? OR o.customer_id LIKE ? OR c.name LIKE ? " +
+                    "ORDER BY o.id");
         } catch (SQLException e) {
             throw new RuntimeException(e);
         }
+    }
+
+    public static List<Order> findOrders(String query) throws SQLException {
+        for (int i = 1; i <= 4; i++) {
+            STM_FIND.setString(i, "%".concat(query).concat("%"));
+        }
+        ResultSet rst = STM_FIND.executeQuery();
+        List<Order> orderList = new ArrayList<>();
+        while (rst.next()) {
+            String id = rst.getString("id");
+            Date date = rst.getDate("date");
+            String customerId = rst.getString("customer_id");
+            String name = rst.getString("name");
+            BigDecimal orderTotal = rst.getBigDecimal("total");
+            orderList.add(new Order(id, date.toString(), customerId, name, orderTotal));
+        }
+        return orderList;
     }
 
     public static boolean existsOrderByCustomerId(String customerID) throws SQLException {
