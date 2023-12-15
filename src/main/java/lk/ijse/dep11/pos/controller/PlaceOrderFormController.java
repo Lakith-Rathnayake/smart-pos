@@ -56,7 +56,7 @@ public class PlaceOrderFormController {
     public JFXButton btnPlaceOrder;
 
     public void initialize() throws IOException {
-        String[] cols = {"code", "description", "qty", "unitPrice", "btnDelete"};
+        String[] cols = {"code", "description", "qty", "unitPrice", "total", "btnDelete"};
         for (int i = 0; i < cols.length; i++) {
             tblOrderDetails.getColumns().get(i).setCellValueFactory(new PropertyValueFactory<>(cols[i]));
         }
