@@ -13,6 +13,7 @@
 - [Contributing](#contributing)
 - [License](#license)
 - [Contact](#contact)
+- [Version](#version)
 
 ## Description
 
@@ -110,3 +111,7 @@ For any inquiries or support, feel free to contact the project maintainer:
 - Name: [Lakith Rathnayake](https://github.com/Lakith-Rathnayake)
 - Email: lakithpathmila@gmail.com
 - LinkedIn: [Lakith Rathnayake](https://www.linkedin.com/in/lakith-rathnayake/)
+
+## Version
+
+- Project Version: 1.0.0
